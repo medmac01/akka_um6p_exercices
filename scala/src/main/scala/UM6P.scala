@@ -11,6 +11,7 @@ case class EnrollStudent(studentName: String, courseId: String)
 case class GetStudentCount(courseId: String)
 case class GetDepartmentInfo()
 case class CreateDepartment(departmentName: String)
+case class CreateCourse(courseName: String, departmentName: String)
 // University Actor
 class UM6P extends Actor {
    var departments: Map[String, ActorRef] = Map()
@@ -28,12 +29,11 @@ class UM6P extends Actor {
 // Department Actor
 class Department extends Actor {
   var courses: Map[String, ActorRef] = Map()
-  
   override def receive: Receive = {
-    case "CreateCourse" =>
-      val course = context.actorOf(Props[Course], "CloudComputing")
-      courses += ("CC101" -> course)
-      sender() ! "Course created"
+    case CreateCourse(courseName, departmentName) =>
+      val course = context.actorOf(Props[Course], courseName)
+      courses += (courseName -> course)
+      sender() ! s"Course created: $courseName in department: $departmentName"
     case EnrollStudent(studentName, courseId) =>
       courses.get(courseId) match {
         case Some(course) => course ! EnrollStudent(studentName, courseId)
