@@ -9,6 +9,8 @@ scalacOptions ++= Seq("-language:postfixOps")
 
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor-typed" % "2.8.5",
-  "ch.qos.logback" % "logback-classic" % "1.5.6",
+  "com.typesafe.akka" %% "akka-actor" % "2.6.20",
+  "com.typesafe.akka" %% "akka-remote" % "2.6.20",
+  "com.typesafe.akka" %% "akka-slf4j" % "2.6.20",
+  "ch.qos.logback" % "logback-classic" % "1.2.12"
 )
