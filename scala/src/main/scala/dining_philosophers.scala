@@ -1,6 +1,7 @@
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.io.StdIn
 
 import akka.actor.{Actor, ActorSystem, Props, ActorRef}
 import akka.pattern.ask
@@ -36,12 +37,63 @@ class philosopher(name: String) extends Actor {
     
       status = Hungry
       println(s"$name is trying to eat... Status: ${status}")
-      // Get fork references
+      // Get fork references  
       val leftFork = context.actorSelection("../Fork" + (name.last.asDigit % 5))
       val rightFork = context.actorSelection("../Fork" + ((name.last.asDigit + 1) % 5))
+
+
+      if (name.last.asDigit == 4) {
+        // Try to acquire both forks
+        implicit val timeout = Timeout(10.seconds)
+        val rightResult = Await.result(rightFork ? "Pick", timeout.duration)
+        if (rightResult == "Success") {
+          println(s"$name picked up right fork, number ${(name.last.asDigit + 1) % 5}")
+          val leftResult = Await.result(leftFork ? "Pick", timeout.duration)
+          if (leftResult == "Success") {
+            println(s"$name picked up left fork, number ${name.last.asDigit % 5}")
+
+            status = Eating
+            println(s"$name is eating with forks ${name.last.asDigit % 5} and ${(name.last.asDigit + 1) % 5} ... Status: ${status}")
+            
+            Thread.sleep(3000)
+
+            // Put down both forks after eating
+            leftFork ! "PutDown"
+            rightFork ! "PutDown"
+            println(s"$name finished eating")
+            status = Thinking
+          } else {
+            println(s"$name couldn't get right fork, trying to picking it again...")
+            Thread.sleep(1000) // Wait before trying again
+            val leftResult = Await.result(leftFork ? "Pick", timeout.duration)
+            if (leftResult == "Success") {
+              println(s"$name picked up left fork, number ${name.last.asDigit % 5}")
+              
+              status = Eating
+              println(s"$name is eating with forks ${name.last.asDigit % 5} and ${(name.last.asDigit + 1) % 5} ... Status: ${status}")
+              
+              Thread.sleep(3000)
+
+              // Put down both forks after eating
+              leftFork ! "PutDown"
+              rightFork ! "PutDown"
+              println(s"$name finished eating")
+              status = Thinking
+            } else {
+              println(s"$name couldn't get left fork, putting down right fork")
+              rightFork ! "PutDown"
+            }
+            // leftFork ! "PutDown"
+            // status = Hungry
+          }
+        } else {
+          // println(s"$name couldn't get left fork")
+          // status = Thinking
+        }
+      } else {
       
       // Try to acquire both forks
-      implicit val timeout = Timeout(1.seconds)
+        implicit val timeout = Timeout(10.seconds)
         val leftResult = Await.result(leftFork ? "Pick", timeout.duration)
         if (leftResult == "Success") {
           println(s"$name picked up left fork, number ${name.last.asDigit % 5}")
@@ -52,7 +104,7 @@ class philosopher(name: String) extends Actor {
             status = Eating
             println(s"$name is eating with forks ${name.last.asDigit % 5} and ${(name.last.asDigit + 1) % 5} ... Status: ${status}")
             
-            Thread.sleep(10000)
+            Thread.sleep(3000)
 
             // Put down both forks after eating
             leftFork ! "PutDown"
@@ -60,18 +112,38 @@ class philosopher(name: String) extends Actor {
             println(s"$name finished eating")
             status = Thinking
           } else {
-            // println(s"$name couldn't get right fork, putting down left fork")
-            // leftFork ! "PutDown"
-            // status = Thinking
+            println(s"$name couldn't get right fork, trying to picking it again...")
+            Thread.sleep(1000) // Wait before trying again
+            val rightResult = Await.result(rightFork ? "Pick", timeout.duration)
+            if (rightResult == "Success") {
+              println(s"$name picked up right fork, number ${(name.last.asDigit + 1) % 5}")
+              
+              status = Eating
+              println(s"$name is eating with forks ${name.last.asDigit % 5} and ${(name.last.asDigit + 1) % 5} ... Status: ${status}")
+              
+              Thread.sleep(3000)
+
+              // Put down both forks after eating
+              leftFork ! "PutDown"
+              rightFork ! "PutDown"
+              println(s"$name finished eating")
+              status = Thinking
+            } else {
+              println(s"$name couldn't get right fork, putting down left fork")
+              leftFork ! "PutDown"
+            }
+            // rightFork ! "PutDown"
+            // status = Hungry
           }
         } else {
-          println(s"$name couldn't get left fork")
-          status = Thinking
+          // println(s"$name couldn't get left fork")
+          // status = Thinking
         }
   }
     
     
   }
+}
   // Fork}
 
 class fork(name: String) extends Actor {
@@ -115,16 +187,39 @@ object diningPhilosophers extends App {
 
   // Situation 1 : Simulate thinking and eating (deadlock situation)
 
+  philosopher0 ! Think
   philosopher1 ! Think
-  philosopher1 ! Eat
   philosopher2 ! Think
-  philosopher2 ! Eat
   philosopher3 ! Think
-  philosopher3 ! Eat
   philosopher4 ! Think
+  philosopher0 ! Eat
+  philosopher1 ! Eat
+  philosopher2 ! Eat
+  philosopher3 ! Eat
   philosopher4 ! Eat
   philosopher0 ! Think
-  philosopher5 ! Eat
+  philosopher1 ! Think
+  philosopher2 ! Think
+  philosopher3 ! Think
+  philosopher4 ! Think
+  philosopher0 ! Eat
+  philosopher1 ! Eat
+  philosopher2 ! Eat
+  philosopher3 ! Eat
+  philosopher4 ! Eat
+
+  // // Situation 2 : Simulate thinking and eating (no deadlock situation); making odd philosophers eat first then even philosophers
+  // philosopher0 ! Think
+  // philosopher1 ! Think
+  // philosopher2 ! Think
+  // philosopher3 ! Think
+  // philosopher4 ! Think
+  // philosopher0 ! Eat
+  // philosopher2 ! Eat
+  // philosopher4 ! Eat
+  // philosopher1 ! Eat
+  // philosopher3 ! Eat
+
 
 
 
@@ -140,5 +235,7 @@ object diningPhilosophers extends App {
 
 
   // Clean up
+  // as.terminate()
+  StdIn.readLine("Press Enter to exit...") // Wait for user input before exiting
   as.terminate()
 }
