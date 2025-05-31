@@ -172,16 +172,16 @@ if (secondResult != "Success") {
 
 ## Screenshots
 ### Starting Fork System
-![Starting Fork System](https://raw.githubusercontent.com/medmac01/akka-dining-philosophers/main/screenshots/fork_starting.png)
+![Starting Fork System](https://github.com/medmac01/akka_dining_philosophers/blob/cdbf89202a13110f18916f882824c73f9eaa439d/screenshots/fork_starting.png)
 
 ### Starting Philosopher System (Subscription)
-![Starting Philosopher System](https://raw.githubusercontent.com/medmac01/akka-dining-philosophers/main/screenshots/philosopher_starting.png)
+![Starting Philosopher System](https://github.com/medmac01/akka_dining_philosophers/blob/cdbf89202a13110f18916f882824c73f9eaa439d/screenshots/philosopher_starting.png)
 
 ### During Execution (Philosophers Eating)
-![Philosophers Eating](https://raw.githubusercontent.com/medmac01/akka-dining-philosophers/main/screenshots/philosophers_eating.png)
+![Philosophers Eating](https://github.com/medmac01/akka_dining_philosophers/blob/cdbf89202a13110f18916f882824c73f9eaa439d/screenshots/philosophers_eating.png)
 
 ### Stopping Philosopher System (Unsubscription)
-![Stopping Philosopher System](https://raw.githubusercontent.com/medmac01/akka-dining-philosophers/main/screenshots/stopping_philosopher_system.png)
+![Stopping Philosopher System](https://github.com/medmac01/akka_dining_philosophers/blob/cdbf89202a13110f18916f882824c73f9eaa439d/screenshots/stopping_philosopher_system.png)
 
 ## References
 
