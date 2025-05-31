@@ -11,7 +11,7 @@ case class Think()
 case class Eat()
 case object StartCycle
 
-class philosopher(name: String) extends Actor {
+class philosopher(name: String, totalPhilosophers: Int) extends Actor {
   import context.dispatcher
 
   // Philosopher Status
@@ -51,21 +51,22 @@ class philosopher(name: String) extends Actor {
       println(s"$name is trying to eat... Status: ${status}")
       
       // Get fork references from remote fork cluster
-      val leftFork = context.actorSelection("akka://ForkSystem@127.0.0.1:2553/user/Fork" + (name.last.asDigit % 5))
-      val rightFork = context.actorSelection("akka://ForkSystem@127.0.0.1:2553/user/Fork" + ((name.last.asDigit + 1) % 5))
+      val philosopherIndex = name.split(" ").last.toInt
+      val leftFork = context.actorSelection("akka://ForkSystem@127.0.0.1:2553/user/Fork" + philosopherIndex)
+      val rightFork = context.actorSelection("akka://ForkSystem@127.0.0.1:2553/user/Fork" + ((philosopherIndex + 1) % totalPhilosophers))
 
-      if (name.last.asDigit == 4) {
-        // Try to acquire both forks (right first for philosopher 4 to avoid deadlock)
+      if (philosopherIndex == totalPhilosophers - 1) {
+        // Try to acquire both forks (right first for last philosopher to avoid deadlock)
         implicit val timeout = Timeout(10.seconds)
         val rightResult = Await.result(rightFork ? "Pick", timeout.duration)
         if (rightResult == "Success") {
-          println(s"$name picked up right fork, number ${(name.last.asDigit + 1) % 5}")
+          println(s"$name picked up right fork, number ${(philosopherIndex + 1) % totalPhilosophers}")
           val leftResult = Await.result(leftFork ? "Pick", timeout.duration)
           if (leftResult == "Success") {
-            println(s"$name picked up left fork, number ${name.last.asDigit % 5}")
+            println(s"$name picked up left fork, number $philosopherIndex")
 
             status = Eating
-            println(s"$name is eating with forks ${name.last.asDigit % 5} and ${(name.last.asDigit + 1) % 5} ... Status: ${status}")
+            println(s"$name is eating with forks $philosopherIndex and ${(philosopherIndex + 1) % totalPhilosophers} ... Status: ${status}")
             
             Thread.sleep(3000)
 
@@ -91,13 +92,13 @@ class philosopher(name: String) extends Actor {
         implicit val timeout = Timeout(10.seconds)
         val leftResult = Await.result(leftFork ? "Pick", timeout.duration)
         if (leftResult == "Success") {
-          println(s"$name picked up left fork, number ${name.last.asDigit % 5}")
+          println(s"$name picked up left fork, number $philosopherIndex")
           val rightResult = Await.result(rightFork ? "Pick", timeout.duration)
           if (rightResult == "Success") {
-            println(s"$name picked up right fork, number ${(name.last.asDigit + 1) % 5}")
+            println(s"$name picked up right fork, number ${(philosopherIndex + 1) % totalPhilosophers}")
             
             status = Eating
-            println(s"$name is eating with forks ${name.last.asDigit % 5} and ${(name.last.asDigit + 1) % 5} ... Status: ${status}")
+            println(s"$name is eating with forks $philosopherIndex and ${(philosopherIndex + 1) % totalPhilosophers} ... Status: ${status}")
             
             Thread.sleep(3000)
 
@@ -126,13 +127,18 @@ object PhilosopherCluster extends App {
   val config = ConfigFactory.load("philosophers.conf")
   val as = ActorSystem("PhilosopherSystem", config)
   
-  // Create five philosophers
-  val philosopher0 = as.actorOf(Props(new philosopher("Philosopher 0")), "Philosopher0")
-  val philosopher1 = as.actorOf(Props(new philosopher("Philosopher 1")), "Philosopher1")
-  val philosopher2 = as.actorOf(Props(new philosopher("Philosopher 2")), "Philosopher2")
-  val philosopher3 = as.actorOf(Props(new philosopher("Philosopher 3")), "Philosopher3")
-  val philosopher4 = as.actorOf(Props(new philosopher("Philosopher 4")), "Philosopher4")
+  // Get number of philosophers from command line args or default to 5
+  val numPhilosophers = if (args.length > 0) args(0).toInt else {
+    print("Enter number of philosophers: ")
+    StdIn.readInt()
+  }
+  
+  // Create philosophers dynamically
+  val philosophers = (0 until numPhilosophers).map { i =>
+    as.actorOf(Props(new philosopher(s"Philosopher $i", numPhilosophers)), s"Philosopher$i")
+  }
 
+  println(s"Created $numPhilosophers philosophers")
   println("Press Enter to stop the philosopher cluster...")
 
   StdIn.readLine()

@@ -25,15 +25,19 @@ object ForkCluster extends App {
   val config = ConfigFactory.load("forks.conf")
   val as = ActorSystem("ForkSystem", config)
   
-  // Create five forks
-  val fork0 = as.actorOf(Props(new fork("Fork 0")), "Fork0")
-  val fork1 = as.actorOf(Props(new fork("Fork 1")), "Fork1")
-  val fork2 = as.actorOf(Props(new fork("Fork 2")), "Fork2")
-  val fork3 = as.actorOf(Props(new fork("Fork 3")), "Fork3")
-  val fork4 = as.actorOf(Props(new fork("Fork 4")), "Fork4")
+  // Get number of forks from command line args or default to 5
+  val numForks = if (args.length > 0) args(0).toInt else {
+    print("Enter number of forks: ")
+    StdIn.readInt()
+  }
+  
+  // Create forks dynamically
+  val forks = (0 until numForks).map { i =>
+    as.actorOf(Props(new fork(s"Fork $i")), s"Fork$i")
+  }
 
-  println("Fork cluster started on port 2553")
-  println("Forks available: Fork0, Fork1, Fork2, Fork3, Fork4")
+  println(s"Fork cluster started on port 2553")
+  println(s"Forks available: ${(0 until numForks).map(i => s"Fork$i").mkString(", ")}")
   println("Press Enter to stop the fork cluster...")
 
   StdIn.readLine()
