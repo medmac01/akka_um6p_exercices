@@ -4,6 +4,8 @@
 
 The Dining Philosophers problem is a classic synchronization problem in computer science that illustrates the challenges of resource allocation and deadlock prevention in concurrent systems. In this implementation, we use Akka Actors and distributed computing concepts to model the philosophers and forks, allowing for a more scalable and robust solution.
 
+[![Dining Philosophers](https://upload.wikimedia.org/wikipedia/commons/8/81/Dining_philosophers_diagram.jpg)](https://en.wikipedia.org/wiki/Dining_philosophers_problem)
+
 ## Key Concepts Implemented
 
 ### 1. Actor Model with Akka
@@ -13,7 +15,7 @@ This implementation uses Akka's actor model, where philosophers and forks are re
 - Failure isolation
 
 ### 2. Distributed System with Akka Cluster
-The system runs across two separate JVMs:
+The system runs across two separate JVMs (Actor Systems):
 - `PhilosopherSystem` - Hosts philosopher actors
 - `ForkSystem` - Hosts fork actors
 
@@ -69,7 +71,7 @@ Several techniques are employed to prevent deadlocks:
 
 ### Serialization
 
-The system uses Jackson JSON serialization for cross-JVM communication:
+The system uses Jackson JSON serialization for cross-JVM communication (Used it to solve the serialization issue):
 - Messages are marked as `Serializable`
 - Configuration defines serialization bindings
 - This enables communication between the separate philosopher and fork systems
@@ -78,18 +80,19 @@ The system uses Jackson JSON serialization for cross-JVM communication:
 
 1. Start the Fork System:
 ```bash
-sbt "runMain ForkCluster"
+sbt "runMain ForkCluster 5" # Replace 5 with the number of forks
 ```
 
 2. In a separate terminal, start the Philosopher System:
 ```bash
-sbt "runMain PhilosopherCluster"
+sbt "runMain PhilosopherCluster 5" # Replace 5 with the number of philosophers
 ```
 
-3. When prompted, enter the number of philosophers/forks (should be the same number)
+3. Ensure both systems are running and connected to the same Akka Cluster
+   - Check the logs for successful cluster join messages
+   - Forks and philosophers should be able to communicate
 
-4. Observe the interactions between philosophers and forks in the terminal output
-
+Note 🙂: Ensure that the Fork System is started before the Philosopher System to ensure forks are available when philosophers start.
 ## Implementation Details
 
 ### Fork Actor Logic
@@ -144,7 +147,7 @@ firstFork.ask(TakeFork(firstForkId, philosopherIndex)).onComplete {
 
 The implementation prevents deadlocks through:
 
-1. **Asymmetric Fork Selection**:
+1. **Asymmetric Fork Selection (Reverse order)**:
 ```scala
 if (philosopherIndex == totalPhilosophers - 1) {
   // Last philosopher takes right fork first
@@ -167,13 +170,18 @@ if (secondResult != "Success") {
 }
 ```
 
-## Future Enhancements
+## Screenshots
+### Starting Fork System
+![Starting Fork System](https://raw.githubusercontent.com/medmac01/akka-dining-philosophers/main/screenshots/fork_starting.png)
 
-1. **Monitoring Dashboard** - Add a web interface to visualize philosopher and fork states
-2. **Metrics Collection** - Track statistics like average eating time, waiting time, etc.
-3. **Dynamic Scaling** - Allow adding/removing philosophers at runtime
-4. **Fault Tolerance** - Improve handling of actor failures and node crashes
-5. **Alternative Coordination Algorithms** - Implement other approaches like token-based coordination
+### Starting Philosopher System (Subscription)
+![Starting Philosopher System](https://raw.githubusercontent.com/medmac01/akka-dining-philosophers/main/screenshots/philosopher_starting.png)
+
+### During Execution (Philosophers Eating)
+![Philosophers Eating](https://raw.githubusercontent.com/medmac01/akka-dining-philosophers/main/screenshots/philosophers_eating.png)
+
+### Stopping Philosopher System (Unsubscription)
+![Stopping Philosopher System](https://raw.githubusercontent.com/medmac01/akka-dining-philosophers/main/screenshots/stopping_philosopher_system.png)
 
 ## References
 
